@@ -6,6 +6,7 @@ from odoo.exceptions import ValidationError
 from odoo import fields
 from datetime import datetime
 from .common import create_test_data
+from unittest.mock import patch
 
 _2dt = fields.Datetime.to_datetime
 
@@ -184,7 +185,7 @@ class BackendCase(SavepointCase):
         self.assertTrue(booking.combination_id)
 
     def test_state(self):
-        # I create a pending booking
+        # I create a pending bookingpatch
         booking = self.env["resource.booking"].create(
             {"type_id": self.rbt.id, "partner_id": self.partner.id}
         )
@@ -384,17 +385,19 @@ class BackendCase(SavepointCase):
         rb_user = new_test_user(
             self.env, login="rbu", groups="base.group_user,resource_booking.group_user"
         )
-        rb = (
-            self.env["resource.booking"]
-            .sudo(rb_user)
-            .create(
-                {
-                    "partner_id": self.partner.id,
-                    "type_id": self.rbt.id,
-                    "combination_id": self.rbcs[0].id,
-                }
+        # Enable auto-subscription messaging
+        with patch.object(self.env.registry, "ready", True):
+            rb = (
+                self.env["resource.booking"]
+                .sudo(rb_user)
+                .create(
+                    {
+                        "partner_id": self.partner.id,
+                        "type_id": self.rbt.id,
+                        "combination_id": self.rbcs[0].id,
+                    }
+                )
             )
-        )
         # Creator and resource must already be following
         self.assertEqual(
             rb.message_partner_ids, rb_user.partner_id | self.users[0].partner_id
