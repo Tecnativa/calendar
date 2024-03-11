@@ -172,14 +172,6 @@ class ResourceBooking(models.Model):
         tracking=True,
         help="Who will attend this booking?",
     )
-    partner_ids = fields.Many2many(
-        "res.partner",
-        string="Contacts",
-        store=True,
-        compute="_compute_partner_ids",
-        inverse="_inverse_partner_ids",
-        help="E.g. multiple people in a room. Used by sale_resource_booking_period",
-    )
     user_id = fields.Many2one(
         comodel_name="res.users",
         default=lambda self: self._default_user_id(),
@@ -404,15 +396,6 @@ class ResourceBooking(models.Model):
             except TypeError:
                 # Either value is False: no stop date
                 record.stop = False
-
-    @api.depends("partner_id")
-    def _compute_partner_ids(self):
-        for record in self:
-            if record.partner_id:
-                record.partner_ids = [(6, 0, [record.partner_id.id])]
-
-    def _inverse_partner_ids(self):
-        pass
 
     @api.depends("meeting_id.user_id")
     def _compute_user_id(self):

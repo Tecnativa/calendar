@@ -12,8 +12,12 @@ class ResPartner(models.Model):
     )
 
     def _compute_resource_booking_count(self):
-        for p in self:
-            p.resource_booking_count = len(p.resource_booking_ids)
+        booking_data = self.env["resource.booking"].read_group(
+            [("partner_id", "in", self.ids)], ["partner_id"], ["partner_id"]
+        )
+        data = {x["partner_id"][0]: x["partner_id_count"] for x in booking_data}
+        for record in self:
+            record.resource_booking_count = data.get(record.id, 0)
 
     def action_view_resource_booking(self):
         self.ensure_one()
